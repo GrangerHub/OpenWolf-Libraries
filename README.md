@@ -37,4 +37,6 @@ And here is a matrix of the generated libraries.  S is static, D is dynamic.
 | vorbis        | S           | S     | S    | S       |
 | zlib          | S, D        | S, D  | S, D | S, D    |
 
-yasm.exe (1.3.0 x86_64) is from [The Yasm Modular Assembler Project](https://yasm.tortall.net/Download.html)
+rsync.exe (3.1.3-1 x86_64) is from [here](http://repo.msys2.org/msys/x86_64/)<br>
+wget.exe (1.20.3 x86_64) is from [here](https://eternallybored.org/misc/wget/)<br>
+yasm.exe (1.3.0 x86_64) is from [here](https://yasm.tortall.net/Download.html)
