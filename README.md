@@ -24,7 +24,7 @@ And here is a matrix of the generated libraries.  S is static, D is dynamic.
 | bullet3       | S           | S     | S    | S       |
 | bzip2         | S           | S     | S    | S       |
 | curl          | S, D        | S, D  | S, D | S, D    |
-| freetype      | S, D        | S, D  | S, D | X, D    |
+| freetype      | S, D        | S, D  | S, D | S, D    |
 | gmp           | S, D        | S, D  | S, D |         |
 | gnutls        | S, D        | S, D  | S, D |         |
 | libjpeg-turbo | S, D        | S, D  | S, D | S, D    |
