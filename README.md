@@ -1,11 +1,12 @@
 OpenWolf-Libraries [![Build Status](https://travis-ci.com/GrangerHub/OpenWolf-Libraries.svg?branch=master)](https://travis-ci.com/GrangerHub/OpenWolf-Libraries)
 ==================
 
-This repository contains a collection of bash scripts (aka recipies) to build library dependencies of the OpenWolf engine using [Travis-CI](https://travis-ci.com) and [AppVeyor](https://www.appveyor.com/) on multiple platforms.  Build artifacts and build logs are automatically uploaded to the [releases](https://github.com/GrangerHub/OpenWolf-Libraries/releases) section.
+This repository contains a collection of bash scripts (aka recipies) to build library dependencies of the [OpenWolf Engine](https://github.com/TheDushan/OpenWolf-Engine) using [Travis-CI](https://travis-ci.com) and [AppVeyor](https://www.appveyor.com/) on multiple platforms.  Build artifacts and build logs are automatically uploaded to the [releases](https://github.com/GrangerHub/OpenWolf-Libraries/releases) section.
 
 <br>
 
 Platforms that are currently supported are:
+
 | OS          | Architecture |
 | ----------- | ------------ |
 | Android 5.0 | aarch64      |
@@ -17,6 +18,7 @@ Platforms that are currently supported are:
 <br>
 
 And here is a matrix of the generated libraries.  S is static, D is dynamic.
+
 | Name          | Android 5.0 | Linux | OS X | Windows |
 | ------------- | ----------- | ----- | ---- | ------- |
 | bullet3       | S           | S     | S    | S       |
