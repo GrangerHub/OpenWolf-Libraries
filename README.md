@@ -10,7 +10,7 @@ Platforms that are currently supported are:
 | OS          | Architecture |
 | ----------- | ------------ |
 | Android 5.0 | aarch64      |
-| Android 5.0 | x86_64       | 
+| Android 5.0 | x86_64       |
 | Linux       | x86_64       |
 | OS X        | x86_64       |
 | Windows     | x86_64       |
@@ -36,3 +36,8 @@ And here is a matrix of the generated libraries.  S is static, D is dynamic.
 | sdl2          | S, D        | S, D  | S, D | S, D    |
 | vorbis        | S           | S     | S    | S       |
 | zlib          | S, D        | S, D  | S, D | S, D    |
+
+
+rsync.exe (3.1.3-1 x86_64) and wget.exe (1.20.3-1, x86_64) are both from [the MSYS2 package repository](http://repo.msys2.org/msys/x86_64/)
+
+yasm.exe (1.3.0 x86_64) is from [The Yasm Modular Assembler Project](https://yasm.tortall.net/Download.html)
