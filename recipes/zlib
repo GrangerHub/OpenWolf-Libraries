@@ -1,0 +1,61 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=1.2.11
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
+CMAKE_FLAGS="
+  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_VERBOSE_MAKEFILE=ON
+"
+
+prep() {
+  prep_tarball https://zlib.net/zlib-$VERSION.tar.gz
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    cmake "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DCMAKE_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE" \
+      -DANDROID_NDK="$ANDROID_NDK_HOME" \
+      -DANDROID_ABI=$ANDROID_ABI \
+      -DANDROID_PLATFORM=$ANDROID_PLATFORM
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+      
+  linux-x86_64|osx-x86_64)
+    cmake "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  windows-x86_64)
+    cmake -G "Visual Studio 15 2017" -A x64 "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX=$PREFIX
+    MSBuild.exe zlib.sln //p:Configuration=Release;Platform=x64
+
+    # collect headers
+    mkdir -p "$PREFIX/include"
+    cp zconf.h "$SRC/zlib.h" \
+      "$PREFIX/include/"
+
+    # collect libraries
+    mkdir -p "$PREFIX/lib"
+    cp Release/zlibstatic.lib "$PREFIX/lib/zlib.lib"
+    cp Release/zlib.dll "$PREFIX/lib/"
+    cp Release/zlib.exp "$PREFIX/lib/zlib_imp.exp"
+    cp Release/zlib.lib "$PREFIX/lib/zlib_imp.lib"
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

@@ -1,0 +1,169 @@
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  echo "This script is not meant to be executed directly"
+  exit 1
+fi
+
+if [[ -z "$OS" ]]; then
+  echo "Please set OS to the platform you wish to build"
+  exit 1
+fi
+
+if [[ $OS = android ]]; then
+  if [[ -z "$ANDROID_SDK_PATH" && -z "$CI" ]]; then
+    ANDROID_SDK_PATH="$HOME/usr/android-sdk"
+  fi
+  ANDROID_NDK_HOME="$ANDROID_SDK_PATH/ndk-bundle"
+  TOOLCHAIN_PATH="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+  CMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" 
+  export PATH="$ANDROID_NDK_HOME:$TOOLCHAIN_PATH:$PATH"
+fi
+
+KITCHEN="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
+RECIPE="$(basename "$0")"
+PATCHES="$KITCHEN/patches"
+SOURCES="$KITCHEN/sources"
+LOGS="$KITCHEN/logs"
+mkdir -p "$SOURCES" "$LOGS"
+
+fire() {
+  set -ex
+  ($@)
+  set +ex
+}
+
+cook() {
+  PLATFORM=${1%-*}
+  ARCH=${1#*-}
+  echo -n "Cooking $RECIPE for $PLATFORM-$ARCH..."
+
+  if [[ $PLATFORM = android ]]; then
+    HOST=$ARCH-linux-$PLATFORM
+    ANDROID_PLATFORM=android-21
+    if [[ $ARCH = aarch64 ]]; then
+      ANDROID_ABI=arm64-v8a
+      RPATH="$ANDROID_NDK_HOME/platforms/$ANDROID_PLATFORM/arch-arm64"
+    elif [[ $ARCH = x86_64 ]]; then
+      ANDROID_ABI=x86_64
+      RPATH="$ANDROID_NDK_HOME/platforms/$ANDROID_PLATFORM/arch-x86_64"
+    fi
+  fi
+
+  BLD="$KITCHEN/build/$PLATFORM-$ARCH/$RECIPE"
+  PREFIX="$KITCHEN/libs/$PLATFORM-$ARCH"
+  mkdir -p "$BLD" "$PREFIX"
+  cd "$BLD"
+
+  export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
+  RECIPE_LOG_FILE="$LOGS/$RECIPE-$PLATFORM-$ARCH-build.log"
+
+  trap recipe_exit INT
+  trap recipe_exit DEBUG
+  RECIPE_LOG=$(fire recipe $PLATFORM-$ARCH 2>&1)  
+  trap - DEBUG
+  trap - INT
+
+  echo "done"
+}
+
+recipe_exit() {
+  local rc=$?
+  echo "$RECIPE_LOG" > "$RECIPE_LOG_FILE"
+  if [ $rc -ne 0 ]; then
+    echo "failed"
+    echo "$RECIPE_LOG"
+    exit $rc
+  fi
+}
+
+prep_tarball() {
+  if [[ ! -d "$SRC" ]]; then
+    local type="${1##*.}"
+    local tarball="$RECIPE-$VERSION.tar.$type"
+
+    cd "$SOURCES"
+    echo -n "Fetching $RECIPE tarball..."
+    wget -qO $tarball "$1"
+    echo "done"
+
+    mkdir -p "$SRC"
+    echo -n "Extracting tarball..."
+    case $type in
+    gz)
+      tar zxf $tarball --strip=1 -C "$SRC"
+      ;;
+    bz2)
+      tar jxf $tarball --strip=1 -C "$SRC"
+      ;;      
+    xz)
+      tar Jxf $tarball --strip=1 -C "$SRC"
+      ;;
+    esac
+    echo "done"
+
+    rm -f $tarball
+  fi
+}
+
+prep_git() {
+  if [[ ! -d "$SRC" ]]; then
+    local url="$1"
+    
+    echo -n "Cloning $RECIPE..."
+    git -C "$SOURCES" clone -q --branch $VERSION "$1" "$RECIPE-$VERSION"
+    echo "done"
+  fi
+}
+
+prep_patch() {
+  for name in "$@"; do
+    if [[ ! -f "$SRC/.$name" ]]; then
+      patch -sd "$SRC" -p1 < "$PATCHES/$RECIPE/$name.patch"
+      touch "$SRC/.$name"
+    fi
+  done
+}
+
+prep_bootstrap() {
+  if [[ $OS != windows && ! -x "$SRC/configure" ]]; then
+    BOOTSTRAP_LOG_FILE="$LOGS/$RECIPE-bootstrap.log"
+    echo -n "Running bootstrap..."
+    cd "$SRC"
+    chmod 755 .bootstrap
+    trap bootstrap_exit INT
+    trap bootstrap_exit DEBUG
+    BOOTSTRAP_LOG=$("./$1" 2>&1)
+    trap - DEBUG
+    trap - INT
+    echo "done"
+  fi
+}
+
+bootstrap_exit() {
+  local rc=$?
+  echo "$BOOTSTRAP_LOG" > "$BOOTSTRAP_LOG_FILE"
+  if [ $rc -ne 0 ]; then
+    echo "failed"
+    echo "$BOOTSTRAP_LOG"
+    exit $rc
+  fi
+}
+
+begin() {
+  if [[ -z "$VERSION" ]]; then
+    echo "VERSION not defined"
+    exit 1
+  fi
+  if [[ -z "$PLATFORMS" ]]; then
+    echo "PLATFORMS not defined"
+    exit 1
+  fi
+  if [[ -z "$SRC" ]]; then
+    SRC="$SOURCES/$RECIPE-$VERSION"
+  fi
+  prep
+  for platform in $PLATFORMS; do
+    if [[ ${platform%-*} = $OS ]]; then
+      cook $platform
+    fi
+  done
+}

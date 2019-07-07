@@ -1,0 +1,13 @@
+diff --git a/Makefile.am b/Makefile.am
+index 0569c688c..f0faf4dc5 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -110,7 +110,7 @@ LIBGMPXX_LT_REVISION = 2
+ LIBGMPXX_LT_AGE      = 5
+ 
+ 
+-SUBDIRS = tests mpn mpz mpq mpf printf scanf rand cxx demos tune doc
++SUBDIRS = tests mpn mpz mpq mpf printf scanf rand cxx demos tune
+ 
+ EXTRA_DIST = configfsf.guess configfsf.sub .gdbinit INSTALL.autoconf \
+ 	     COPYING.LESSERv3 COPYINGv2 COPYINGv3

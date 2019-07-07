@@ -1,0 +1,10 @@
+diff --git a/.bootstrap b/.bootstrap
+new file mode 100755
+index 000000000..4d39e55e0
+--- /dev/null
++++ b/.bootstrap
+@@ -0,0 +1,4 @@
++#!/bin/bash
++autoreconf -i
++git submodule update --init
++make bootstrap

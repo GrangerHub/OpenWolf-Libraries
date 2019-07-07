@@ -1,0 +1,11 @@
+--- a/tools/bin/sdkmanager	2017-09-13 21:55:20.000000000 -0500
++++ b/tools/bin/sdkmanager	2019-06-28 02:16:41.836787255 -0500
+@@ -64,7 +64,7 @@ case "`uname`" in
+     ;;
+ esac
+ 
+-CLASSPATH=$APP_HOME/lib/dvlib-26.0.0-dev.jar:$APP_HOME/lib/jimfs-1.1.jar:$APP_HOME/lib/jsr305-1.3.9.jar:$APP_HOME/lib/repository-26.0.0-dev.jar:$APP_HOME/lib/j2objc-annotations-1.1.jar:$APP_HOME/lib/layoutlib-api-26.0.0-dev.jar:$APP_HOME/lib/gson-2.3.jar:$APP_HOME/lib/httpcore-4.2.5.jar:$APP_HOME/lib/commons-logging-1.1.1.jar:$APP_HOME/lib/commons-compress-1.12.jar:$APP_HOME/lib/annotations-26.0.0-dev.jar:$APP_HOME/lib/error_prone_annotations-2.0.18.jar:$APP_HOME/lib/animal-sniffer-annotations-1.14.jar:$APP_HOME/lib/httpclient-4.2.6.jar:$APP_HOME/lib/commons-codec-1.6.jar:$APP_HOME/lib/common-26.0.0-dev.jar:$APP_HOME/lib/kxml2-2.3.0.jar:$APP_HOME/lib/httpmime-4.1.jar:$APP_HOME/lib/annotations-12.0.jar:$APP_HOME/lib/sdklib-26.0.0-dev.jar:$APP_HOME/lib/guava-22.0.jar
++CLASSPATH=$APP_HOME/bin/jaxb_lib/activation.jar:$APP_HOME/bin/jaxb_lib/jaxb-impl.jar:$APP_HOME/bin/jaxb_lib/jaxb-xjc.jar:$APP_HOME/bin/jaxb_lib/jaxb-core.jar:$APP_HOME/bin/jaxb_lib/jaxb-jxc.jar:$APP_HOME/bin/jaxb_lib/jaxb-api.jar:$APP_HOME/lib/dvlib-26.0.0-dev.jar:$APP_HOME/lib/jimfs-1.1.jar:$APP_HOME/lib/jsr305-1.3.9.jar:$APP_HOME/lib/repository-26.0.0-dev.jar:$APP_HOME/lib/j2objc-annotations-1.1.jar:$APP_HOME/lib/layoutlib-api-26.0.0-dev.jar:$APP_HOME/lib/gson-2.3.jar:$APP_HOME/lib/httpcore-4.2.5.jar:$APP_HOME/lib/commons-logging-1.1.1.jar:$APP_HOME/lib/commons-compress-1.12.jar:$APP_HOME/lib/annotations-26.0.0-dev.jar:$APP_HOME/lib/error_prone_annotations-2.0.18.jar:$APP_HOME/lib/animal-sniffer-annotations-1.14.jar:$APP_HOME/lib/httpclient-4.2.6.jar:$APP_HOME/lib/commons-codec-1.6.jar:$APP_HOME/lib/common-26.0.0-dev.jar:$APP_HOME/lib/kxml2-2.3.0.jar:$APP_HOME/lib/httpmime-4.1.jar:$APP_HOME/lib/annotations-12.0.jar:$APP_HOME/lib/sdklib-26.0.0-dev.jar:$APP_HOME/lib/guava-22.0.jar
+ 
+ # Determine the Java command to use to start the JVM.
+ if [ -n "$JAVA_HOME" ] ; then

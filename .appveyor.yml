@@ -1,0 +1,30 @@
+version: 1.0.{build}
+clone_depth: 50
+image:
+- Visual Studio 2017
+platform: x64
+configuration: Release
+
+environment:
+  OS: windows
+
+install:
+- set PATH=%APPVEYOR_BUILD_FOLDER%\tools;%PATH%
+
+build_script:
+- bash -c "recipes/bullet3"
+- bash -c "recipes/bzip2"
+- bash -c "recipes/zlib"
+- bash -c "recipes/curl"     # depends on zlib
+- bash -c "recipes/libpng"   # depends on zlib
+- bash -c "recipes/freetype" # depends on zlib and libpng
+- bash -c "recipes/libjpeg-turbo"
+- bash -c "recipes/ogg"
+- bash -c "recipes/vorbis"   # depends on ogg
+- bash -c "recipes/sdl2"
+- bash -c "recipes/openal"   # depends on sdl2
+- bash -c "recipes/libsodium"
+
+artifacts:
+- path: libs
+- path: logs

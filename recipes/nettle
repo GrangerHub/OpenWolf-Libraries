@@ -1,0 +1,46 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=3.5.1
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64"
+CONFIGURE_FLAGS="
+  --disable-openssl
+  --disable-documentation
+"
+
+prep() {
+  prep_tarball https://ftp.gnu.org/gnu/nettle/nettle-$VERSION.tar.gz
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      CC=${HOST}${ANDROID_PLATFORM##*-}-clang \
+      CXX=${HOST}${ANDROID_PLATFORM##*-}-clang++ \
+      --prefix="$PREFIX" \
+      --host=$HOST \
+      --enable-arm-neon \
+      --with-include-path="$PREFIX/include" \
+      --with-lib-path="$PREFIX/lib" 
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  linux-x86_64|osx-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      CFLAGS="-g -O2 -fPIC" \
+      --prefix="$PREFIX" \
+      --libdir="$PREFIX/lib" \
+      --with-include-path="$PREFIX/include" \
+      --with-lib-path="$PREFIX/lib"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

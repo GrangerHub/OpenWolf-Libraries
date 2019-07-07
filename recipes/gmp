@@ -1,0 +1,39 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=6.1.2
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64"
+CONFIGURE_FLAGS=
+
+prep() {
+  prep_tarball https://gmplib.org/download/gmp/gmp-$VERSION.tar.bz2
+  prep_patch no-docs
+  prep_bootstrap .bootstrap
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      CC=${HOST}${ANDROID_PLATFORM##*-}-clang \
+      CXX=${HOST}${ANDROID_PLATFORM##*-}-clang++ \
+      --prefix="$PREFIX" \
+      --host=$HOST
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  linux-x86_64|osx-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      --prefix="$PREFIX" \
+      --enable-fat
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

@@ -1,0 +1,70 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=2.0.2
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
+CMAKE_FLAGS="
+  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_VERBOSE_MAKEFILE=ON
+  -DWITH_TURBOJPEG=NO
+"
+
+prep() {
+  prep_tarball https://sourceforge.net/projects/libjpeg-turbo/files/$VERSION/libjpeg-turbo-$VERSION.tar.gz
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    cmake "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DCMAKE_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE" \
+      -DANDROID_NDK="$ANDROID_NDK_HOME" \
+      -DANDROID_ABI=$ANDROID_ABI \
+      -DANDROID_PLATFORM=$ANDROID_PLATFORM
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+    
+  linux-x86_64|osx-x86_64)
+    if [[ $PLATFORM = osx ]]; then
+      CMAKE_ASM_FLAGS="-DCMAKE_ASM_NASM_COMPILER=/usr/local/bin/yasm"
+    fi
+    cmake "$SRC" $CMAKE_FLAGS $CMAKE_ASM_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX"
+
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  windows-x86_64)
+    cmake -G "Visual Studio 15 2017" -A x64 "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DCMAKE_ASM_NASM_COMPILER="yasm.exe"
+    MSBuild.exe libjpeg-turbo.sln //p:Configuration=Release;Platform=x64
+
+    # collect headers
+    mkdir -p "$PREFIX/include"
+    cp "$SRC/jerror.h" \
+      "$SRC/jmorecfg.h" \
+      "$SRC/jpegint.h" \
+      "$SRC/jpeglib.h" \
+      jconfig.h \
+      "$PREFIX/include"
+
+    # collect library
+    cp Release/jpeg-static.lib "$PREFIX/lib/jpeg.lib"
+    cp Release/jpeg62.dll "$PREFIX/lib/"
+    cp Release/jpeg.exp "$PREFIX/lib/jpeg_imp.exp"
+    cp Release/jpeg.lib "$PREFIX/lib/jpeg_imp.lib"
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

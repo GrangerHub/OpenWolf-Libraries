@@ -1,0 +1,129 @@
+dist: bionic
+language: python
+python: 3.7
+
+env:
+  global:
+  - APPVEYOR_SLUG=openwolf-libraries
+  - APPVEYOR_ACCOUNT=jkent
+  # APPVEYOR_TOKEN
+  - secure: "qUwiXs6elsGHkzA5U4SNpWlh68QEycNU6ZcrHN8mk/33UtOQHUF/3uW5L2IkQ9QORAMae/0JJvEVmF3pzavJyPecYMJGcJv2hhcLSWVIrrpHRPEoP/wuOeSVF7yeJi9pHZnV2bNDrQR5B8wIf+1Oc3xhWpXBxt0d3+QhXoVqj+x1gnY34nM352fwrgnjgVRzq5odWiuzxRE+viQRs1z5wYIkSCGNebxyGc3lc1rm4aDQQC9s8t95McwS9sjBJG9vZEODJMEM3OWgLWlt0q4bo4bFpLz1cSuYSBDRsvBbGgjsFktQzOTqCNp7hsZQTC+TLwnuXhbj/4g1oBXV8QMJDy8jNFBn3BS5IgDzNeeSVh9ojl+lfzLz5h5Jex+gW8Ljvr5pstNMJe/kxxKLJehCfzR1/PuAPX/NSi7mMKEoC1CtBoUr+fc9PnQUrrzFvIhvdvGqyV78iuxvSrUM/hxy6zewMvmi2zGfYvswpPhbmdIXgeOZxBDV7SGq+qn7qgS1GnONj8b98rSubyLx+8Pq3CSmDJWK3qT2GreFZCkSKG7bIdHMKfaRGklKVoMQ2zT1CjehcUz3VYmCYcosGi0CLhiHCqkl040h0zw62G/sl8LG3Gm/yntfRnETmg9i75LhTAXfTyuZ4CmSwmp6cJZqDiTRiHJ6pYZMCucG0DWJ8vY="
+  - AWS_ACCESS_KEY_ID=AKIA5LW6HA4HS6R3LISB 
+  # AWS_SECRET_ACCESS_KEY
+  - secure: "RgTijNOFZoWDs3GVWfBWwSVUQ9/jCVdxL3whaQvpBdSTZqZgkzvjZUNId0y5hTTSPBpu4YKws+6MOXzpRFJXI9jWWZpLE2jsqyZWqtFvfLwNsPtj1XgU0Q0FzY7fTqsv74weXo69q7UD5wQlUE13bIzEYREbneU5f5N7MTK6Ry/CDtnutCyc3O+IpJ1UOVubY0Cm/WJz3ith0aPUK2090rlcUVfdQoetUoA/eFNBTatLCIR0kVpdneCrgxYbL3sVjcQ3CUcDLEGDz6kXAoAHEgyWWX8GvGxCTQcQJtpqsz2dtblGIawik47E6b7SW6uaylb9va4ZUQNAW3+x0vygUDjiTrh7xWq8yEHQIMbyjgumbLwpF9hmLW5YMKJ4qldv8THNKCvyfn9ThoDdl+GPOlGwKX9OQr9sRInOug7sZW6VetLwqzVNoIj52Gh6ANRq/RcsT/NMjUBElIS1pjwWhRO8rTeUGn6m3scvsxFtVsRNEbrB9dKbZXRdcndVzgOWfEiC1SA/NGvylH6EROrg/TCOc+YmYXWimyx++/r5x3I2P2dITUgCMUnt0ACZZomMV4jTd/HyFjDTKegtVcEt3+brGsqsjQsrdBhVHEmGL8U77BRKp34ZLe91rLRcqqrgV+rGEgpVny6QOxNWLcTne5z0pk+3zpt7xFQVBbzuw70="
+
+stages:
+- name: build
+- name: deploy
+  if: type = push AND tag =~ ^v\d+\.\d+\.\d+
+- name: cleanup
+  if: type = push AND tag =~ ^v\d+\.\d+\.\d+
+
+script:
+- recipes/bullet3
+- recipes/bzip2
+- recipes/zlib
+- recipes/gmp
+- recipes/nettle   # depends on gmp
+- recipes/gnutls   # depends on nettle
+- recipes/curl     # depends on zlib and gnutls
+- recipes/libpng   # depends on zlib
+- recipes/freetype # depends on zlib and libpng
+- recipes/libjpeg-turbo
+- recipes/ogg
+- recipes/vorbis   # depends on ogg
+- recipes/sdl2
+- recipes/openal   # depends on sdl2
+- recipes/libsodium
+
+jobs:
+  fast_finish: true
+  include:
+  - stage: build
+    name: build android libraries
+    os: linux
+    env:
+    - OS=android
+    - ANDROID_SDK_PATH="$HOME/usr/android-sdk"
+    - ANDROID_NDK_HOME="$ANDROID_SDK_PATH/ndk-bundle"
+    before_install:
+    - .ci/android_setup.sh
+    - sudo apt-get update
+    - sudo apt-get install -y autoconf autogen autopoint gettext gperf libtool pkg-config
+    - sudo pip install awscli
+    after_success:
+    - tar c libs logs | gzip | aws s3 cp - s3://openwolf-libraries/tarballs/libs-$OS-$TRAVIS_BUILD_NUMBER.tar.gz
+    cache:
+      directories:
+      - $HOME/usr
+
+  - stage: build
+    name: build linux libraries
+    os: linux
+    env:
+    - OS=linux
+    before_install:
+    - sudo apt-get update
+    - sudo apt-get install -y autoconf autogen autopoint freeglut3-dev gperf libasound2-dev libglu1-mesa-dev libjack-dev libpulse-dev libtool libx11-dev mesa-common-dev pkg-config yasm
+    - pip install awscli
+    after_success:
+    - tar c libs logs | gzip | aws s3 cp - s3://openwolf-libraries/tarballs/libs-$OS-$TRAVIS_BUILD_NUMBER.tar.gz
+
+  - stage: build
+    name: build osx libraries
+    os: osx
+    language: generic
+    env:
+    - OS=osx
+    - PATH="/usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/gettext/bin:/usr/local/opt/readline/bin:$PATH"
+    before_install: 
+    - pip install awscli
+    - travis_wait brew install -f autogen yasm
+    after_success:
+    - tar c libs logs | gzip | aws s3 cp - s3://openwolf-libraries/tarballs/libs-$OS-$TRAVIS_BUILD_NUMBER.tar.gz
+
+  - stage: build
+    name: build windows libraries
+    os: linux
+    env:
+    - OS=windows
+    - PYTHONUNBUFFERED=1
+    before_install:
+    - pip install awscli requests
+    script:
+    - .ci/appveyor.py
+    after_success:
+    - tar c libs logs | gzip | aws s3 cp - s3://openwolf-libraries/tarballs/libs-$OS-$TRAVIS_BUILD_NUMBER.tar.gz
+
+  - stage: deploy
+    name: deploy
+    before_install:
+    - pip install awscli
+    install: true
+    script: true
+    before_deploy:
+    - mkdir -p libs logs
+    - aws s3 cp s3://openwolf-libraries/tarballs/libs-android-$TRAVIS_BUILD_NUMBER.tar.gz .
+    - aws s3 cp s3://openwolf-libraries/tarballs/libs-linux-$TRAVIS_BUILD_NUMBER.tar.gz .
+    - aws s3 cp s3://openwolf-libraries/tarballs/libs-osx-$TRAVIS_BUILD_NUMBER.tar.gz .
+    - aws s3 cp s3://openwolf-libraries/tarballs/libs-windows-$TRAVIS_BUILD_NUMBER.tar.gz .
+    - find -maxdepth 1 -name "*.tar.gz" -exec tar xzf '{}' \;
+    - zip -r libs.zip libs
+    - zip -r logs.zip logs
+    deploy:
+      provider: releases
+      api_key:
+        secure: MQU8mXarMGzqFnfjxX+pa8g4I+MRuIbBEhlRdjcAeHM+hIoQL0fvS7R4LRYzbqTlLmeSA2CKYvW59aBm4o5q4oJwVMHmK8qriz4OvwMRPaX2EiDrm5jzAFtz7LDDp2J+CFJXgRM8KAScPWYbFJJSCnbRMxXBcyPgJ4xmc/a9R8w2Fa7uMCST2zKuaJiLG1/tghHFLm0ulN+hNKwyqSrJ/frxEwbHSaqwV4dWTm/HsCtkCaUin5pA+ZDD4dUzsYgb0qgUVZLx5D1B4dYJEnTQnRj38RytyVG/D36igogsJVwGUVUsYGsEfNG5nW5zhIEETBF/kqbvC4Zg1X8oky/bow7ifPLjrrDIYIQOlojtcKuOGfQzA/iQu51b325QroOvVIqUIfuq8sdk0eosmLnfiR+963nfktBJdR8n+B8aeoIxjdGiiJgEQU++xCiL6RI8HcuvLYUK5QB07hd81lCTHc20GPmo2KKuYTuBfGDiopY4o9z5+uvDYkvxuRLSIPjbpxyLTMwnXk8dMvQTBA7c+GmtRQ07CE1Xuws5CeeRzWqawwsWNwzTEKJeQZcMI090zD4jKk/f8YVea/qBGyU3XLaqlO95sFNx6wdcJaxlKULVA2iJWSf3pa52ZUvr7r0lzNdxvBJ3P+h1lGm3dIc5+jI6ZeaUx3oo0kLpZdh7nZU=
+      file:
+      - libs.zip
+      - logs.zip
+      skip_cleanup: true
+      on:
+        repo: GrangerHub/OpenWolf-Libraries
+
+  - stage: cleanup
+    name: cleanup
+    before_install:
+    - pip install awscli
+    script:
+    - aws s3 rm --recursive s3://openwolf-libraries/tarballs --exclude "*" --include "*-$TRAVIS_BUILD_NUMBER.tar.gz"

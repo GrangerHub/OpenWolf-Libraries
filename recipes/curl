@@ -1,0 +1,71 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=7.65.1
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
+CONFIGURE_FLAGS="
+  --without-ssl
+  --with-gnutls
+"
+CMAKE_FLAGS="
+  -DCMAKE_CONFIGURATION_TYPES=Release
+  -DCMAKE_VERBOSE_MAKEFILE=ON
+  -DBUILD_CURL_EXE=NO
+  -DCMAKE_USE_OPENSSL=NO
+"
+
+prep() {
+  prep_tarball https://curl.haxx.se/download/curl-$VERSION.tar.gz
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      CC=${HOST}${ANDROID_PLATFORM##*-}-clang \
+      CXX=${HOST}${ANDROID_PLATFORM##*-}-clang++ \
+      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      --prefix="$PREFIX" \
+      --host=$HOST
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+    
+  linux-x86_64|osx-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      --prefix="$PREFIX"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  windows-x86_64)
+    cmake -G "Visual Studio 15 2017" -A x64 "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DCMAKE_USE_WINSSL=YES \
+      -DBUILD_SHARED_LIBS=NO
+    MSBuild.exe curl.sln //p:Configuration=Release;Platform=x64
+    cmake -G "Visual Studio 15 2017" -A x64 "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DCMAKE_USE_WINSSL=YES \
+      -DBUILD_SHARED_LIBS=YES
+    MSBuild.exe curl.sln //p:Configuration=Release;Platform=x64
+
+    # collect headers
+    mkdir -p "$PREFIX/include"
+    cp -r "$SRC/include" "$PREFIX/include/"
+
+    # collect library
+    mkdir -p $PREFIX/lib
+    cp lib/Release/libcurl.lib "$PREFIX/lib"
+    cp lib/Release/libcurl.dll "$PREFIX/lib"
+    cp lib/Release/libcurl_imp.exp "$PREFIX/lib"
+    cp lib/Release/libcurl_imp.lib "$PREFIX/lib"
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

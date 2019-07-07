@@ -1,0 +1,57 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=1.0.18
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
+CONFIGURE_FLAGS=
+
+prep() {
+  prep_tarball https://github.com/jedisct1/libsodium/archive/$VERSION-RELEASE.tar.gz
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      CC=${HOST}${ANDROID_PLATFORM##*-}-clang \
+      CXX=${HOST}${ANDROID_PLATFORM##*-}-clang++ \
+      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      CFLAGS="-I$PREFIX/include" \
+      --prefix="$PREFIX" \
+      --host=$HOST
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  linux-x86_64|osx-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      --prefix="$PREFIX"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  windows-x86_64)
+    cp -r "$SRC/." .
+    MSBuild.exe libsodium.sln //p:Configuration=Release;Platform=x64
+    MSBuild.exe libsodium.sln //p:Configuration=ReleaseDLL;Platform=x64
+
+    # collect headers
+    mkdir -p $PREFIX/include
+    rsync -qavm --include='*.h' --include='*.hpp' -f 'hide,! */' \
+      "$SRC/src/" "$PREFIX/include"
+
+    # collect libraries
+    mkdir -p "$PREFIX/lib"
+    cp Build/Release/x64/libsodium.lib "$PREFIX/lib/"
+    cp Build/ReleaseDLL/x64/libsodium.dll "$PREFIX/lib/"
+    cp Build/ReleaseDLL/x64/libsodium.exp "$PREFIX/lib/libsodium_imp.exp"
+    cp Build/ReleaseDLL/x64/libsodium.lib "$PREFIX/lib/libsodium_imp.lib"
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

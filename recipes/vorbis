@@ -1,0 +1,64 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=master
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
+CMAKE_FLAGS="
+  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_VERBOSE_MAKEFILE=ON
+"
+
+prep() {
+  prep_git https://git.xiph.org/vorbis.git
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    cmake "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DCMAKE_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE" \
+      -DANDROID_NDK="$ANDROID_NDK_HOME" \
+      -DANDROID_ABI=$ANDROID_ABI \
+      -DANDROID_PLATFORM=$ANDROID_PLATFORM \
+      -DOGG_INCLUDE_DIRS="$PREFIX/include" \
+      -DOGG_LIBRARIES=-logg
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+    
+  linux-x86_64|osx-x86_64)
+    cmake "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  windows-x86_64)
+    cmake -G "Visual Studio 15 2017" -A x64 "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DOGG_LIBRARIES="$PREFIX/lib/ogg.lib"
+    MSBuild.exe vorbis.sln //p:Configuration=Release;Platform=x64
+
+    # collect headers
+    mkdir -p "$PREFIX/include"
+    rsync -qavm --include='*.h' --include='*.hpp' --exclude='internal/' -f 'hide,! */' \
+      "$SRC/include/" "$PREFIX/include"
+
+    # collect library
+    mkdir -p "$PREFIX/lib"
+    cp lib/Release/vorbis.lib \
+      lib/Release/vorbisenc.lib \
+      lib/Release/vorbisfile.lib \
+      "$PREFIX/lib"
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

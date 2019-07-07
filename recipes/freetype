@@ -1,0 +1,65 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=2.10.0
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
+CMAKE_FLAGS="
+  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_VERBOSE_MAKEFILE=ON
+  -DFT_WITH_ZLIB=YES
+  -DFT_WITH_PNG=YES
+"
+prep() {
+  prep_tarball https://download.savannah.gnu.org/releases/freetype/freetype-$VERSION.tar.bz2
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    cmake "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
+      -DANDROID_NDK="$ANDROID_NDK_HOME" \
+      -DANDROID_ABI=$ANDROID_ABI \
+      -DANDROID_PLATFORM=$ANDROID_PLATFORM \
+      -DPNG_PNG_INCLUDE_DIR="$PREFIX/include/libpng16" \
+      -DPNG_LIBRARY="-lpng"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  linux-x86_64|osx-x86_64)
+    cmake "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DPNG_PNG_INCLUDE_DIR="$PREFIX/include/libpng" \
+      -DPNG_LIBRARY="-lpng"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  windows-x86_64)
+    cmake -G "Visual Studio 15 2017" -A x64 "$SRC" $CMAKE_FLAGS \
+      -DCMAKE_PREFIX_PATH="$PREFIX" \
+      -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+      -DPNG_LIBRARY="$PREFIX/lib/libpng.lib" \
+      -DPNG_PNG_INCLUDE_DIR="$PREFIX/include/libpng"
+    MSBuild.exe freetype.sln //p:Configuration=Release;Platform=x64
+
+    # collect headers
+    mkdir -p $PREFIX/include
+    rsync -qavm --include='*.h' --include='*.hpp' --exclude='internal/' -f 'hide,! */' \
+      "$SRC/include/" include/ "$PREFIX/include"
+
+    # collect library
+    mkdir -p "$PREFIX/lib"
+    cp Release/freetype.lib "$PREFIX/lib"
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

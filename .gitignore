@@ -1,0 +1,14 @@
+.vscode/
+build/*
+!build/android-arm64-v8a
+build/android-arm64-v8a/*
+!build/android-arm64-v8a/bullet3
+build/android-arm64-v8a/bullet3/*
+!build/android-arm64-v8a/bullet3/jni
+!build/android-arm64-v8a/libsodium
+build/android-arm64-v8a/libsodium/*
+!build/android-arm64-v8a/libsodium/configure
+libs/
+logs/
+msvc/
+sources/

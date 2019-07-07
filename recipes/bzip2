@@ -1,0 +1,47 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=1.0.6
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
+
+prep() {
+  prep_tarball https://sourceware.org/pub/bzip2/bzip2-$VERSION.tar.gz
+  prep_patch no-test
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    cp -r "$SRC/." .
+    make \
+      CC="${HOST}${ANDROID_PLATFORM##*-}-clang" \
+      AR="${HOST}-ar" \
+      RANLIB="${HOST}-ranlib"
+    make PREFIX="$PREFIX" install
+    ;;
+
+  linux-x86_64|osx-x86_64)
+    cp -r "$SRC/." .
+    make
+    make PREFIX="$PREFIX" install
+    ;;
+
+  windows-x86_64)
+    cp -r "$SRC/." .
+    PATH="/c/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Auxiliary/Build:$PATH" cmd //C "vcvarsall.bat amd64 && nmake -f makefile.msc lib"
+
+    # collect headers
+    mkdir -p "$PREFIX/include"
+    cp "$SRC/bzlib.h" "$PREFIX/include"
+
+    # collect library
+    mkdir -p "$PREFIX/lib"
+    cp libbz2.lib "$PREFIX/lib"
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin

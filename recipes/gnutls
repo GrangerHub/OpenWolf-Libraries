@@ -1,0 +1,59 @@
+#!/bin/bash
+source "$(dirname "$0")/../cookbook"
+
+VERSION=3.6.8
+PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64"
+CONFIGURE_FLAGS="
+  --disable-doc
+  --disable-tools
+  --disable-guile
+  --disable-nls
+  --with-included-libtasn1
+  --with-included-unistring
+  --without-idn
+  --without-libidn2
+  --without-p11-kit
+"
+
+prep() {
+  prep_tarball https://www.gnupg.org/ftp/gcrypt/gnutls/v${VERSION%.*}/gnutls-$VERSION.tar.xz
+}
+
+recipe() {
+  case $1 in
+  android-aarch64|android-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      CC=${HOST}${ANDROID_PLATFORM##*-}-clang \
+      CXX=${HOST}${ANDROID_PLATFORM##*-}-clang++ \
+      CPP_FLAGS="-I$PREFIX/include" \
+      LDFLAGS="-L$PREFIX/lib" \
+      GMP_LIBS="-lgmp" \
+      NETTLE_LIBS="-lnettle" \
+      HOGWEED_LIBS="-lhogweed -lgmp" \
+      --prefix="$PREFIX" \
+      --host=$HOST
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+
+  linux-x86_64|osx-x86_64)
+    "$SRC/configure" $CONFIGURE_FLAGS \
+      PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" \
+      CFLAGS="-g -O2 -fPIC" \
+      CPP_FLAGS="-I$PREFIX/include" \
+      LDFLAGS="-L$PREFIX/lib" \
+      GMP_LIBS="-lgmp" \
+      NETTLE_LIBS="-lnettle" \
+      HOGWEED_LIBS="-lhogweed -lgmp" \
+      --prefix="$PREFIX"
+    make -j $(nproc 2>/dev/null || echo 12)
+    make install
+    ;;
+  *)
+    exit 1
+    ;;
+  esac
+}
+
+begin
