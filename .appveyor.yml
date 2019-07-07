@@ -12,7 +12,7 @@ install:
 - set PATH=%APPVEYOR_BUILD_FOLDER%\tools;C:\msys64\usr\bin;%PATH%
 - bash -lc "pacman --needed --noconfirm -Syu"
 - bash -lc "pacman --needed --noconfirm -Sy"
-- bash -lc "pacman --noconfirm -S rsync wget"
+- bash -lc "pacman --noconfirm -S libopenssl rsync wget"
 
 build_script:
 - bash -c "recipes/bullet3"
