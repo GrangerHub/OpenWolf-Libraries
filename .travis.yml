@@ -120,6 +120,7 @@ jobs:
       skip_cleanup: true
       on:
         repo: GrangerHub/OpenWolf-Libraries
+        tags: true
 
   - stage: cleanup
     name: cleanup
