@@ -22,7 +22,6 @@ build_script:
 - bash -c "recipes/ogg"
 - bash -c "recipes/vorbis"   # depends on ogg
 - bash -c "recipes/sdl2"
-- bash -c "recipes/openal"   # depends on sdl2
 - bash -c "recipes/libsodium"
 
 artifacts:

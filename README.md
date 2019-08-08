@@ -32,7 +32,6 @@ And here is a matrix of the generated libraries.  S is static, D is dynamic.
 | libsodium     | S, D        | S, D  | S, D | S, D    |
 | nettle        | S, D        | S, D  | S, D |         |
 | ogg           | S           | S     | S    | S       |
-| openal        | D           | D     | D    | D       |
 | sdl2          | S, D        | S, D  | S, D | S, D    |
 | vorbis        | S           | S     | S    | S       |
 | zlib          | S, D        | S, D  | S, D | S, D    |

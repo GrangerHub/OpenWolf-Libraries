@@ -33,7 +33,6 @@ script:
 - recipes/ogg
 - recipes/vorbis   # depends on ogg
 - recipes/sdl2
-- recipes/openal   # depends on sdl2
 - recipes/libsodium
 
 jobs:
