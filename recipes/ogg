@@ -9,7 +9,7 @@ CMAKE_FLAGS="
 "
 
 prep() {
-    prep_git https://git.xiph.org/ogg.git
+    prep_git https://gitlab.xiph.org/xiph/ogg.git
 }
 
 recipe() {

@@ -9,7 +9,7 @@ CMAKE_FLAGS="
 "
 
 prep() {
-  prep_git https://git.xiph.org/vorbis.git
+  prep_git https://gitlab.xiph.org/xiph/vorbis.git
 }
 
 recipe() {
