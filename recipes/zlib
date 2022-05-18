@@ -1,7 +1,7 @@
 #!/bin/bash
 source "$(dirname "$0")/../cookbook"
 
-VERSION=1.2.11
+VERSION=1.2.12
 PLATFORMS="android-aarch64 android-x86_64 linux-x86_64 osx-x86_64 windows-x86_64"
 CMAKE_FLAGS="
   -DCMAKE_BUILD_TYPE=Release
